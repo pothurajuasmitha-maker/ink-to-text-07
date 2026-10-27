@@ -1,0 +1,207 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MasterApp());
+}
+
+class MasterApp extends StatelessWidget {
+  const MasterApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'నా స్మార్ట్ యాప్',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.indigo,
+          brightness: Brightness.light,
+        ),
+      ),
+      home: const MainHomeScreen(),
+    );
+  }
+}
+
+class MainHomeScreen extends StatefulWidget {
+  const MainHomeScreen({super.key});
+
+  @override
+  State<MainHomeScreen> createState() => _MainHomeScreenState();
+}
+
+class _MainHomeScreenState extends State<MainHomeScreen> {
+  final List<Map<String, dynamic>> _todoList = [];
+  final TextEditingController _taskController = TextEditingController();
+
+  void _addTask() {
+    if (_taskController.text.trim().isEmpty) return;
+    setState(() {
+      _todoList.add({
+        'title': _taskController.text.trim(),
+        'isCompleted': false,
+        'time': DateTime.now().toString().substring(11, 16),
+      });
+      _taskController.clear();
+    });
+    Navigator.pop(context);
+  }
+
+  void _toggleTask(int index) {
+    setState(() {
+      _todoList[index]['isCompleted'] = !_todoList[index]['isCompleted'];
+    });
+  }
+
+  void _deleteTask(int index) {
+    setState(() {
+      _todoList.removeAt(index);
+    });
+  }
+
+  void _showAddTaskBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          top: 25,
+          left: 20,
+          right: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 25,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'క్రొత్త పనిని జోడించండి',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: _taskController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'పని వివరాలు (Task Details)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _addTask,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('యాడ్ చేయి (Add)', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    int completedCount = _todoList.where((item) => item['isCompleted']).length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('నా పర్ఫెక్ట్ యాప్', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        elevation: 4,
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.indigo.shade50,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.verified, size: 50, color: Colors.indigo),
+                const SizedBox(height: 10),
+                const Text(
+                  'యాప్ విజయవంతంగా పనిచేస్తుంది!',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'మొత్తం పనులు: ${_todoList.length} | పూర్తయినవి: $completedCount',
+                  style: const TextStyle(fontSize: 14, color: Colors.black70),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _todoList.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.task_alt, size: 70, color: Colors.grey),
+                        SizedBox(height: 10),
+                        Text(
+                          'ఏ విధమైన పనులు లేవు.\nక్రింద ఉన్న + బటన్ క్లిక్ చేసి యాడ్ చేయండి.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _todoList.length,
+                    itemBuilder: (context, index) {
+                      final item = _todoList[index];
+                      return Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: item['isCompleted'],
+                            onChanged: (_) => _toggleTask(index),
+                            activeColor: Colors.indigo,
+                          ),
+                          title: Text(
+                            item['title'],
+                            style: TextStyle(
+                              decoration: item['isCompleted']
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Text('సమయం: ${item['time']}'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _deleteTask(index),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddTaskBottomSheet,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('క్రొత్త టాస్క్'),
+      ),
+    );
+  }
+}
